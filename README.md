@@ -69,11 +69,11 @@ Then open `http://127.0.0.1:8000`.
 ## Team
 Built as a 6-person college project — dataset & baseline modeling, NLP extraction, risk engine, backend, and frontend split across the team.
 
-Aryan- Integration Owner- lead of the project, worked on all the models included in the project.
-Deepika- Backend/API- worked on the backend/api part of the project, integrating everything to make it a runnable model.
-Surbhi-Frontend-Worked on the frontend part of the project, creating a structured, simple and well explained interface for the model.
-Rohit-Risk Engine-worked on the risk engine, provides red flags or basic assessment levels for the symptoms to know if immediate care is necessary or not.
-Sejal- Dataset/Baseline models- Worked on listing out the dataset and sorting it out. Also, ran the baseline models to see whicbh gives the best results for the preferred datasets.
-Shivani-NLP Extraction- Worked on the NLP part which extracts the symptoms through phrases and assess them.
+-Aryan- Integration Owner- lead of the project, worked on all the models included in the project.
+-Deepika- Backend/API- worked on the backend/api part of the project, integrating everything to make it a runnable model.
+-Surbhi-Frontend-Worked on the frontend part of the project, creating a structured, simple and well explained interface for the model.
+-Rohit-Risk Engine-worked on the risk engine, provides red flags or basic assessment levels for the symptoms to know if immediate care is necessary or not.
+-Sejal- Dataset/Baseline models- Worked on listing out the dataset and sorting it out. Also, ran the baseline models to see whicbh gives the best results for the preferred datasets.
+-Shivani-NLP Extraction- Worked on the NLP part which extracts the symptoms through phrases and assess them.
 
 *Academic project — not intended for real-world medical use without proper clinical validation.*
