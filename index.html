@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Health Assistant — Review Build</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d1520;
+    --panel: #131e2b;
+    --panel-raised: #17222f;
+    --hairline: #22303f;
+    --text: #e9eef2;
+    --text-dim: #7d93a3;
+    --text-faint: #4d5f6e;
+    --amber: #e8a33d;
+    --amber-dim: rgba(232, 163, 61, 0.14);
+    --teal: #4f9fc4;
+    --teal-dim: rgba(79, 159, 196, 0.14);
+    --crimson: #d1495b;
+    --crimson-dim: rgba(209, 73, 91, 0.1);
+    --display: 'Space Grotesk', sans-serif;
+    --body: 'IBM Plex Sans', -apple-system, sans-serif;
+    --mono: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(232,163,61,0.06), transparent),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(79,159,196,0.05), transparent),
+      var(--ink);
+    color: var(--text);
+    font-family: var(--body);
+    min-height: 100vh;
+  }
+
+  header {
+    border-bottom: 1px solid var(--hairline);
+    padding: 22px 28px;
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    max-width: 1240px;
+    margin: 0 auto;
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .brand .mark {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: -0.01em;
+  }
+  .brand .sub {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-dim);
+  }
+  .stat-strip {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .stat-chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--panel);
+    border: 1px solid var(--hairline);
+    padding: 5px 11px;
+    border-radius: 5px;
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+  }
+  .stat-chip b { color: var(--amber); font-weight: 500; }
+
+  .disclaimer {
+    background: var(--crimson-dim);
+    border-bottom: 1px solid rgba(209, 73, 91, 0.25);
+    color: #e8909c;
+    font-size: 12.5px;
+    padding: 9px 28px;
+    text-align: center;
+    font-family: var(--mono);
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 1px;
+    background: var(--hairline);
+    max-width: 1240px;
+    margin: 28px auto;
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; margin: 16px; }
+  }
+
+  .pane {
+    background: var(--panel);
+    padding: 22px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .pane-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+  }
+  .pane-head h2 {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin: 0;
+  }
+  .pane-head .count {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-dim);
+  }
+
+  input[type="search"] {
+    width: 100%;
+    background: var(--ink);
+    border: 1px solid var(--hairline);
+    color: var(--text);
+    padding: 10px 13px;
+    border-radius: 7px;
+    font-size: 13.5px;
+    font-family: var(--body);
+    margin-bottom: 12px;
+    transition: border-color 0.15s;
+  }
+  input[type="search"]:focus {
+    outline: none;
+    border-color: var(--amber);
+  }
+
+  .symptom-list { display: flex; flex-direction: column; gap: 1px; }
+  .symptom-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 8px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13.5px;
+    transition: background 0.1s;
+  }
+  .symptom-row:hover { background: var(--panel-raised); }
+  .symptom-row input {
+    accent-color: var(--amber);
+    cursor: pointer;
+    width: 15px; height: 15px;
+  }
+
+  .selected-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+    min-height: 22px;
+  }
+  .chip {
+    background: var(--amber-dim);
+    color: var(--amber);
+    border: 1px solid rgba(232,163,61,0.25);
+    font-size: 11.5px;
+    font-family: var(--mono);
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+
+  button#predictBtn {
+    width: 100%;
+    background: var(--amber);
+    color: #1a1206;
+    border: none;
+    padding: 13px;
+    border-radius: 7px;
+    font-weight: 600;
+    font-family: var(--display);
+    font-size: 14px;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: filter 0.15s, transform 0.1s;
+  }
+  button#predictBtn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+  button#predictBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .empty-state {
+    color: var(--text-faint);
+    font-size: 13px;
+    text-align: center;
+    padding: 50px 16px;
+    font-family: var(--mono);
+    line-height: 1.7;
+  }
+
+  .result-card {
+    border: 1px solid var(--hairline);
+    border-radius: 9px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    background: var(--panel-raised);
+    opacity: 0;
+    animation: rise 0.4s ease forwards;
+  }
+  .result-card:nth-child(1) { animation-delay: 0.02s; border-color: rgba(232,163,61,0.3); }
+  .result-card:nth-child(2) { animation-delay: 0.08s; }
+  .result-card:nth-child(3) { animation-delay: 0.14s; }
+  .result-card:nth-child(4) { animation-delay: 0.20s; }
+  .result-card:nth-child(5) { animation-delay: 0.26s; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .rank-disease { display: flex; align-items: baseline; gap: 9px; }
+  .rank {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--text-faint);
+  }
+  .result-card:nth-child(1) .rank { color: var(--amber); }
+  .disease { font-family: var(--display); font-size: 15px; font-weight: 600; }
+  .score { font-family: var(--mono); font-size: 13px; color: var(--amber); white-space: nowrap; }
+
+  .score-track {
+    height: 5px;
+    background: var(--ink);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .score-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--amber), #f4c869);
+    width: 0%;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    border-radius: 3px;
+  }
+
+  .contrib-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-faint);
+    margin-bottom: 9px;
+  }
+  .contrib-row {
+    display: grid;
+    grid-template-columns: 1fr 90px;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+  }
+  .contrib-name {
+    font-size: 12px;
+    color: var(--text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .diverge-track {
+    position: relative;
+    height: 14px;
+    background: var(--ink);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .diverge-mid {
+    position: absolute;
+    left: 50%;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: var(--hairline);
+  }
+  .diverge-fill {
+    position: absolute;
+    top: 1px; bottom: 1px;
+    border-radius: 2px;
+    transition: width 0.5s ease, left 0.5s ease;
+  }
+  .diverge-fill.pos { background: var(--amber); }
+  .diverge-fill.neg { background: var(--teal); }
+
+  .analyze-box {
+    border: 1px solid var(--hairline);
+    border-radius: 9px;
+    padding: 16px;
+    margin-bottom: 20px;
+    background: var(--panel-raised);
+  }
+  .analyze-box label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    display: block;
+    margin-bottom: 8px;
+  }
+  textarea#freeTextInput {
+    width: 100%;
+    background: var(--ink);
+    border: 1px solid var(--hairline);
+    color: var(--text);
+    padding: 11px 13px;
+    border-radius: 7px;
+    font-size: 13.5px;
+    font-family: var(--body);
+    resize: vertical;
+    min-height: 70px;
+    margin-bottom: 10px;
+  }
+  textarea#freeTextInput:focus { outline: none; border-color: var(--amber); }
+  button#analyzeBtn {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--hairline);
+    padding: 10px 16px;
+    border-radius: 7px;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  button#analyzeBtn:hover:not(:disabled) { border-color: var(--amber); }
+  button#analyzeBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .divider {
+    text-align: center;
+    color: var(--text-faint);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    margin: 4px 0 18px;
+    letter-spacing: 0.05em;
+  }
+
+  .risk-banner {
+    border-radius: 8px;
+    padding: 13px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .risk-banner.emergency {
+    background: var(--crimson-dim);
+    border: 1px solid rgba(209,73,91,0.35);
+    color: #f0a8b2;
+  }
+  .risk-banner.moderate {
+    background: var(--amber-dim);
+    border: 1px solid rgba(232,163,61,0.3);
+    color: #f0c987;
+  }
+  .risk-banner.low {
+    background: var(--teal-dim);
+    border: 1px solid rgba(79,159,196,0.25);
+    color: #9ccbe3;
+  }
+  .risk-banner .risk-head {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 13.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+  }
+  .risk-banner .risk-rules {
+    font-family: var(--mono);
+    font-size: 11px;
+    margin-top: 6px;
+    opacity: 0.85;
+  }
+  .extracted-note {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+  .extracted-note b { color: var(--amber); }
+
+  .unrecognized-note {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-faint);
+    padding: 10px 4px;
+    border-top: 1px dashed var(--hairline);
+    margin-top: 6px;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 24px;
+  }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--hairline); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="brand">
+      <span class="mark">AI Health Assistant</span>
+      <span class="sub">/ internal review build</span>
+    </div>
+    <div class="stat-strip" id="statStrip">
+      <span class="stat-chip">loading model info…</span>
+    </div>
+  </div>
+</header>
+
+<div class="disclaimer">
+  Prototype for supervisor/team review — not a diagnostic tool. NLP extraction, ML prediction, and an independent risk-assessment engine are integrated below. Red-flag rules are a draft set pending clinical review.
+</div>
+
+<main>
+  <div class="pane">
+    <div class="pane-head">
+      <h2>Select Symptoms</h2>
+      <span class="count" id="symptomCount"></span>
+    </div>
+
+    <div class="analyze-box">
+      <label>Describe symptoms in your own words</label>
+      <textarea id="freeTextInput" placeholder="e.g. I've had a sharp chest pain and shortness of breath since this morning"></textarea>
+      <button id="analyzeBtn">Analyze text</button>
+    </div>
+    <div class="divider">— or select manually below —</div>
+
+    <div class="selected-bar" id="selectedBar"></div>
+    <input type="search" id="searchBox" placeholder="Search symptoms…">
+    <div class="symptom-list" id="symptomList"></div>
+  </div>
+
+  <div class="pane">
+    <div class="pane-head">
+      <h2>Predictions</h2>
+    </div>
+    <button id="predictBtn" disabled>Select symptoms to predict</button>
+    <div id="results" style="margin-top:16px;">
+      <div class="empty-state">No prediction yet.<br>Check symptoms on the left, then run a prediction.</div>
+    </div>
+  </div>
+</main>
+
+<footer>Logistic Regression baseline · 413 classes · macro-F1 from 5-fold stratified CV</footer>
+
+<script>
+const API = "";
+let allSymptoms = [];
+let selected = new Set();
+
+async function init() {
+  const res = await fetch(`${API}/symptoms`);
+  const data = await res.json();
+  allSymptoms = data.symptoms;
+  renderList(allSymptoms);
+  document.getElementById('symptomCount').textContent = `${allSymptoms.length} known`;
+  document.getElementById('statStrip').innerHTML = `
+    <span class="stat-chip">model <b>logreg_baseline_v1</b></span>
+    <span class="stat-chip">macro-F1 <b>0.825</b></span>
+    <span class="stat-chip">classes <b>413</b></span>
+  `;
+}
+
+function renderList(items) {
+  const container = document.getElementById('symptomList');
+  container.innerHTML = '';
+  items.forEach(s => {
+    const row = document.createElement('label');
+    row.className = 'symptom-row';
+    row.innerHTML = `
+      <input type="checkbox" value="${s}" ${selected.has(s) ? 'checked' : ''}>
+      <span>${s}</span>
+    `;
+    row.querySelector('input').addEventListener('change', e => {
+      if (e.target.checked) selected.add(s); else selected.delete(s);
+      renderSelectedBar();
+      updateButton();
+    });
+    container.appendChild(row);
+  });
+}
+
+function renderSelectedBar() {
+  const bar = document.getElementById('selectedBar');
+  bar.innerHTML = '';
+  selected.forEach(s => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.textContent = s;
+    bar.appendChild(chip);
+  });
+}
+
+function updateButton() {
+  const btn = document.getElementById('predictBtn');
+  btn.disabled = selected.size === 0;
+  btn.textContent = selected.size === 0
+    ? 'Select symptoms to predict'
+    : `Predict from ${selected.size} symptom${selected.size > 1 ? 's' : ''}`;
+}
+
+document.getElementById('searchBox').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  renderList(allSymptoms.filter(s => s.includes(q)));
+});
+
+document.getElementById('predictBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('predictBtn');
+  btn.disabled = true;
+  btn.textContent = 'Predicting…';
+
+  const res = await fetch(`${API}/predict`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ symptoms: Array.from(selected), top_k: 5 })
+  });
+
+  updateButton();
+
+  if (!res.ok) {
+    const err = await res.json();
+    document.getElementById('results').innerHTML =
+      `<div class="empty-state">Error: ${err.detail}</div>`;
+    return;
+  }
+
+  const data = await res.json();
+  renderResults(data);
+});
+
+document.getElementById('analyzeBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('analyzeBtn');
+  const text = document.getElementById('freeTextInput').value.trim();
+  if (!text) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Analyzing…';
+
+  const res = await fetch(`${API}/analyze`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: text, top_k: 5 })
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Analyze text';
+
+  if (!res.ok) {
+    const err = await res.json();
+    document.getElementById('results').innerHTML =
+      `<div class="empty-state">Error: ${err.detail}</div>`;
+    return;
+  }
+
+  const data = await res.json();
+
+  // Reflect extracted symptoms in the manual checklist too, so both
+  // modes stay in sync.
+  selected = new Set(data.extracted_symptoms);
+  renderSelectedBar();
+  renderList(allSymptoms);
+  updateButton();
+
+  renderResults(data, { fromAnalyze: true });
+});
+
+function renderRiskBanner(risk) {
+  const rulesText = risk.triggered_rules.length
+    ? `Triggered: ${risk.triggered_rules.map(r => r.name).join(', ')}`
+    : '';
+  return `
+    <div class="risk-banner ${risk.risk_level}">
+      <div class="risk-head">Risk level: ${risk.risk_level}</div>
+      <div>${risk.guidance}</div>
+      ${rulesText ? `<div class="risk-rules">${rulesText}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderResults(data, opts = {}) {
+  const container = document.getElementById('results');
+  container.innerHTML = '';
+
+  if (opts.fromAnalyze) {
+    container.innerHTML += renderRiskBanner(data.risk_assessment);
+    container.innerHTML += `<div class="extracted-note">Extracted symptoms: <b>${data.extracted_symptoms.join(', ')}</b>${data.negated_symptoms.length ? ` &nbsp;|&nbsp; Excluded (negated): ${data.negated_symptoms.join(', ')}` : ''}</div>`;
+  }
+
+  const maxScore = data.predictions[0]?.score || 1;
+
+  data.predictions.forEach((p, i) => {
+    const maxAbsWeight = Math.max(...p.contributing_symptoms.map(c => Math.abs(c.weight)), 0.001);
+
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = `
+      <div class="result-head">
+        <div class="rank-disease">
+          <span class="rank">#${i + 1}</span>
+          <span class="disease">${p.disease}</span>
+        </div>
+        <span class="score">${(p.score * 100).toFixed(1)}%</span>
+      </div>
+      <div class="score-track"><div class="score-fill" data-w="${(p.score / maxScore) * 100}"></div></div>
+      <div class="contrib-label">Signal — symptom coefficient × input</div>
+      ${p.contributing_symptoms.map(c => {
+        const pct = (Math.abs(c.weight) / maxAbsWeight) * 50; // half-width max
+        const isPos = c.weight >= 0;
+        return `
+        <div class="contrib-row">
+          <span class="contrib-name">${c.symptom}</span>
+          <div class="diverge-track">
+            <div class="diverge-mid"></div>
+            <div class="diverge-fill ${isPos ? 'pos' : 'neg'}" data-pct="${pct}" data-pos="${isPos}"></div>
+          </div>
+        </div>`;
+      }).join('')}
+    `;
+    container.appendChild(card);
+  });
+
+  if ((data.unrecognized_symptoms || []).length) {
+    const note = document.createElement('div');
+    note.className = 'unrecognized-note';
+    note.textContent = `Ignored (not in model vocabulary): ${data.unrecognized_symptoms.join(', ')}`;
+    container.appendChild(note);
+  }
+
+  // Trigger bar animations after paint
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.score-fill').forEach(el => {
+      el.style.width = el.dataset.w + '%';
+    });
+    document.querySelectorAll('.diverge-fill').forEach(el => {
+      const pct = parseFloat(el.dataset.pct);
+      const isPos = el.dataset.pos === 'true';
+      el.style.width = pct + '%';
+      el.style.left = isPos ? '50%' : (50 - pct) + '%';
+    });
+  });
+}
+
+init();
+</script>
+
+</body>
+</html>
